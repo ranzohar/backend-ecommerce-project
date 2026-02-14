@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Hello</title>
+  </head>
+  <body>
+    <h1>Hello World!</h1>
+    <button onclick="writeHelloWorld()">Put Data</button>
+    <button onclick="deleteHelloWorld()">Delete Data</button>
+    <button onclick="getHelloWorld()">Get Hello</button>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+      async function writeHelloWorld() {
+        try {
+          const response = await axios.patch("/api/hello", {
+            hello: "hello world from html",
+          });
+          const message = response.data?.message || "Success";
+          alert(message);
+        } catch (error) {
+          const data = error?.response?.data || {};
+          const message = data.message || "Request failed";
+          const details = data.details ? ` (${data.details})` : "";
+          const code = data.code ? ` [${data.code}]` : "";
+          alert(`${message}${details}${code}`);
+        }
+      }
+      async function deleteHelloWorld() {
+        try {
+          const response = await axios.delete("/api/hello");
+          const message = response.data?.message || "Success";
+          alert(message);
+        } catch (error) {
+          const data = error?.response?.data || {};
+          const message = data.message || "Request failed";
+          const details = data.details ? ` (${data.details})` : "";
+          const code = data.code ? ` [${data.code}]` : "";
+          alert(`${message}${details}${code}`);
+        }
+      }
+      async function getHelloWorld() {
+        try {
+          const response = await axios.get("/api/hello");
+          const hello = response.data?.hello;
+          const message = hello ?? "No hello value";
+          alert(message);
+        } catch (error) {
+          const data = error?.response?.data || {};
+          const message = data.message || "Request failed";
+          const details = data.details ? ` (${data.details})` : "";
+          const code = data.code ? ` [${data.code}]` : "";
+          alert(`${message}${details}${code}`);
+        }
+      }
+    </script>
+  </body>
+</html>

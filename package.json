@@ -1,0 +1,36 @@
+{
+  "name": "project-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "imports": {
+    "#src/*": "./*"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "cryptr": "^6.4.0",
+    "dotenv": "^16.4.7",
+    "express": "^5.2.1",
+    "mongodb": "^7.1.0",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "data/*",
+      "logs/*"
+    ]
+  }
+}
