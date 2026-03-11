@@ -1,38 +1,64 @@
-import path from "path";
-import { readJsonFile, writeJsonFile } from "#src/utils/index.js";
-
-const dataFilePath = path.resolve(process.cwd(), "data/products", "data.json");
+import {
+  getCollection,
+  PRODUCTS_COLLECTION,
+  CATEGORIES_COLLECTION,
+} from "#src/mongodb/mongodb.service.js";
+import { rethrowDuplicate } from "#src/utils/index.js";
 
 export async function upsertProduct(productId, product) {
-  const products = await readJsonFile(dataFilePath, {});
-  products[productId] = product;
-  await writeJsonFile(dataFilePath, products);
-  return products[productId];
+  const categoriesCollection = await getCollection(CATEGORIES_COLLECTION);
+
+  const existingCategory = await categoriesCollection.findOne({
+    name: product.category,
+  });
+
+  if (!existingCategory) {
+    throw new Error("CATEGORY_NOT_FOUND");
+  }
+
+  const collection = await getCollection(PRODUCTS_COLLECTION);
+
+  try {
+    await collection.updateOne(
+      { _id: productId },
+      [
+        { $set: product },
+        { $set: { categoryId: existingCategory._id } },
+        { $unset: "category" },
+      ],
+      { upsert: true },
+    );
+  } catch (err) {
+    rethrowDuplicate(err, "PRODUCT_TITLE_TAKEN");
+  }
+
+  return product;
 }
 
 export async function deleteProduct(productId) {
-  const products = await readJsonFile(dataFilePath, {});
-  const existed = Object.prototype.hasOwnProperty.call(products, productId);
-  if (existed) {
-    delete products[productId];
-    await writeJsonFile(dataFilePath, products);
-  }
-  return existed;
+  const collection = await getCollection(PRODUCTS_COLLECTION);
+  const result = await collection.deleteOne({ _id: productId });
+  return result.deletedCount > 0;
 }
 
 export async function getProduct(productId) {
-  const products = await readJsonFile(dataFilePath, {});
-  return products[productId] ?? null;
+  const collection = await getCollection(PRODUCTS_COLLECTION);
+  const product = await collection.findOne({ _id: productId });
+  if (!product) {
+    return null;
+  }
+  const { _id, ...rest } = product;
+  return { id: _id, ...rest };
 }
 
 export async function listProducts({ filterBy }) {
-  const products = await readJsonFile(dataFilePath, {});
+  const collection = await getCollection(PRODUCTS_COLLECTION);
+  const query = {};
   if (filterBy?.title) {
-    var filtered = Object.fromEntries(
-      Object.entries(products).filter(([, product]) => {
-        return product?.title === filterBy.title;
-      }),
-    );
+    query.title = filterBy.title;
   }
-  return filtered;
+  const products = await collection.find(query).toArray();
+  return products.map(({ _id, ...rest }) => {
+    return { id: _id, ...rest };
+  });
 }

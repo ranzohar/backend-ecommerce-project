@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from "vitest";
 import request from "supertest";
-import { hashPassword } from "#src/crypt-service.js";
 import {
   NON_ADMIN_USERNAME,
   NON_ADMIN_PASSWORD,
@@ -9,8 +8,11 @@ import {
   MOCK_USER_ID,
   MOCK_ORDER_1,
   MOCK_ORDER_2,
+  MOCK_ORDER_1_RESPONSE,
+  MOCK_ORDER_2_RESPONSE,
   MOCK_STORED_ORDERS,
   MOCK_ALL_ORDERS,
+  MOCK_PRODUCTS,
 } from "./helpers/mocks.js";
 
 vi.mock("#src/mongodb/mongodb.service.js", () => {
@@ -18,21 +20,18 @@ vi.mock("#src/mongodb/mongodb.service.js", () => {
     getCollection: vi.fn(),
     USERS_COLLECTION: "users",
     ORDER_COLLECTION: "orders",
+    PRODUCTS_COLLECTION: "products",
   };
 });
 
 import { getCollection } from "#src/mongodb/mongodb.service.js";
-import { createApp } from "./helpers/app.js";
+import { createTestSetup, hashedAdminPassword, hashedNonAdminPassword } from "./helpers/test-setup.js";
 import { HTTP_STATUS } from "#src/utils/index.js";
 
 let app;
-let hashedNonAdminPassword;
-let hashedAdminPassword;
 
 beforeAll(async () => {
-  hashedNonAdminPassword = await hashPassword(NON_ADMIN_PASSWORD);
-  hashedAdminPassword = await hashPassword(ADMIN_PASSWORD);
-  app = createApp();
+  ({ app } = await createTestSetup());
 });
 
 describe("POST /api/order + GET /api/order", () => {
@@ -57,9 +56,20 @@ describe("POST /api/order + GET /api/order", () => {
       }),
     };
 
+    const mockProductsCollection = {
+      find: vi.fn().mockReturnValue({
+        toArray: vi.fn().mockResolvedValue(
+          MOCK_PRODUCTS.map(({ id, title, price }) => { return { _id: id, title, price }; })
+        ),
+      }),
+    };
+
     getCollection.mockImplementation((collectionName) => {
       if (collectionName === "users") {
         return Promise.resolve(mockUsersCollection);
+      }
+      if (collectionName === "products") {
+        return Promise.resolve(mockProductsCollection);
       }
       return Promise.resolve(mockOrdersCollection);
     });
@@ -80,8 +90,8 @@ describe("POST /api/order + GET /api/order", () => {
       .set("Cookie", cookie)
       .send(MOCK_ORDER_2);
 
-    expect(addOrder1Res.body).toEqual(MOCK_ORDER_1);
-    expect(addOrder2Res.body).toEqual(MOCK_ORDER_2);
+    expect(addOrder1Res.body).toEqual(MOCK_ORDER_1_RESPONSE);
+    expect(addOrder2Res.body).toEqual(MOCK_ORDER_2_RESPONSE);
 
     const getOrdersRes = await request(app)
       .get("/api/order")

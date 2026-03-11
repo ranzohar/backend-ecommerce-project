@@ -1,11 +1,12 @@
 import {
   upsertProduct,
-  deleteProduct,
+  // deleteProduct,
   getProduct,
   listProducts,
 } from "./product.service.js";
+import { getNewId } from "#src/mongodb/mongodb.service.js";
 import { logError, logInfo } from "#src/log.service.js";
-import { pickFields } from "#src/utils/index.js";
+import { pickFields, HTTP_STATUS } from "#src/utils/index.js";
 
 const PRODUCT_FIELDS = ["title", "price", "category", "description"];
 
@@ -42,14 +43,7 @@ export async function getProductHandler(req, res) {
 }
 
 export async function addProductHandler(req, res) {
-  const { productId } = req.params;
-  if (!productId) {
-    res.status(400).json({
-      message: "Product id is required",
-      code: "PRODUCT_ID_REQUIRED",
-    });
-    return;
-  }
+  const productId = getNewId();
 
   try {
     const productInput = pickFields(req.body, PRODUCT_FIELDS);
@@ -58,6 +52,20 @@ export async function addProductHandler(req, res) {
     logInfo(`Response upsert product sent with status ${res.statusCode}`);
   } catch (err) {
     logError(`Failed to write product data: ${err?.message ?? err}`);
+    if (err?.message === "CATEGORY_NOT_FOUND") {
+      res.status(HTTP_STATUS.NOT_FOUND).json({
+        message: "Category not found",
+        code: "CATEGORY_NOT_FOUND",
+      });
+      return;
+    }
+    if (err?.message === "PRODUCT_TITLE_TAKEN") {
+      res.status(HTTP_STATUS.CONFLICT).json({
+        message: "Product title already exists",
+        code: "PRODUCT_TITLE_TAKEN",
+      });
+      return;
+    }
     res.status(500).json({
       message: "Failed to write product data",
       code: "WRITE_PRODUCT_FAILED",

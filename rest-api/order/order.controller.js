@@ -3,7 +3,7 @@ import { logDebug, logInfo } from "#src/log.service.js";
 import { ADD_ORDER_ERRORS, GET_ORDERS_ERRORS } from "./order.error.js";
 import { addOrder, getOrders, getOrdersByUser } from "./order.service.js";
 
-const ORDER_FIELDS = ["price"];
+const ORDER_FIELDS = ["products"];
 
 export async function add(req, res) {
   crudlSafe(res, ADD_ORDER_ERRORS, async () => {

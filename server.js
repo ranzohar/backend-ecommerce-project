@@ -11,6 +11,7 @@ import { idRoutes } from "./rest-api/id/getid.js";
 import { productRoutes } from "./rest-api/product/product.routes.js";
 import { userRoutes } from "./rest-api/user/user.routes.js";
 import { orderRoutes } from "./rest-api/order/order.routes.js";
+import { categoryRoutes } from "./rest-api/category/category.routes.js";
 import { setAls } from "./rest-api/middleware/set-als.js";
 
 // Ensure old run.log is deleted before logging
@@ -36,6 +37,7 @@ app.use("/api/id", idRoutes);
 app.use("/api/product", productRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/order", orderRoutes);
+app.use("/api/category", categoryRoutes);
 app.get(/.*/, (req, res) => {
   res.sendFile(path.resolve("public/index.html"));
 });

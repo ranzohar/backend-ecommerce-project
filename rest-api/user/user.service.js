@@ -4,42 +4,18 @@ import {
   USERS_COLLECTION,
   ORDER_COLLECTION,
 } from "#src/mongodb/mongodb.service.js";
-import { toObjectId, requiredArguments } from "#src/utils/index.js";
-
-async function verifyUsernameNotTaken(username, { excludeUserId } = {}) {
-  const users = await getCollection(USERS_COLLECTION);
-  if (!username) {
-    return false;
-  }
-
-  const filter = {
-    username: { $regex: `^${username}$`, $options: "i" },
-  };
-
-  if (excludeUserId) {
-    const excludedId = toObjectId(excludeUserId);
-    if (!excludedId) {
-      return true;
-    }
-    filter._id = { $ne: excludedId };
-  }
-
-  const existingUser = await users.findOne(filter);
-  if (existingUser) {
-    throw new Error("USERNAME_TAKEN");
-  }
-}
+import { toObjectId, requiredArguments, rethrowDuplicate } from "#src/utils/index.js";
 
 export async function addUser(user) {
   requiredArguments([user?.username, "username"], [user?._id, "userId"]);
   const usersCollection = await getCollection(USERS_COLLECTION);
-  await verifyUsernameNotTaken(user.username);
-  const result = await usersCollection.insertOne(user);
-  if (!result.acknowledged) {
-    logError(
-      `Failed to add user: ${JSON.stringify(user)}, result: ${JSON.stringify(result)}`,
-    );
-    throw new Error("USER_CREATION_FAILED");
+  try {
+    const result = await usersCollection.insertOne(user);
+    if (!result.acknowledged) {
+      throw new Error("USER_CREATION_FAILED");
+    }
+  } catch (err) {
+    rethrowDuplicate(err, "USERNAME_TAKEN");
   }
   return user;
 }
@@ -90,10 +66,7 @@ export async function updateUserByUsername(username, updates) {
     const { hashedPassword, ...updatesWithoutPassword } = updates;
     return updatesWithoutPassword;
   } catch (err) {
-    if (err.code === 11000) {
-      throw new Error("USERNAME_TAKEN");
-    }
-    throw err;
+    rethrowDuplicate(err, "USERNAME_TAKEN");
   }
 }
 

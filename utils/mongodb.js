@@ -10,3 +10,10 @@ export function toObjectId(value) {
     return null;
   }
 }
+
+export function rethrowDuplicate(err, errorCode) {
+  if (err?.code === 11000) {
+    throw new Error(errorCode);
+  }
+  throw err;
+}

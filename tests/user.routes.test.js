@@ -5,11 +5,18 @@ import {
   ADMIN_USERNAME,
   ADMIN_PASSWORD,
   MOCK_USER_WITH_ORDERS,
-  NEW_USER_USERNAME,
-  NEW_USER_PASSWORD,
   NON_ADMIN_USERNAME,
   NON_ADMIN_PASSWORD,
 } from "./helpers/mocks.js";
+import {
+  createTestSetup,
+  setupAdminUserMock,
+  hashedAdminPassword,
+  hashedNonAdminPassword,
+} from "./helpers/test-setup.js";
+
+const NEW_USER_USERNAME = "newuser";
+const NEW_USER_PASSWORD = "newpassword123";
 
 vi.mock("#src/mongodb/mongodb.service.js", () => {
   return {
@@ -21,7 +28,6 @@ vi.mock("#src/mongodb/mongodb.service.js", () => {
 });
 
 import { getCollection } from "#src/mongodb/mongodb.service.js";
-import { createApp } from "./helpers/app.js";
 import { HTTP_STATUS } from "#src/utils/index.js";
 
 const UPDATED_USERNAME = "updateduser";
@@ -30,26 +36,12 @@ const UPDATED_FNAME = "UpdatedFirst";
 const UPDATED_LNAME = "UpdatedLast";
 
 let app;
-let hashedAdminPassword;
 let hashedNewUserPassword;
-let hashedNonAdminPassword;
 
 beforeAll(async () => {
-  hashedAdminPassword = await hashPassword(ADMIN_PASSWORD);
+  ({ app } = await createTestSetup());
   hashedNewUserPassword = await hashPassword(NEW_USER_PASSWORD);
-  hashedNonAdminPassword = await hashPassword(NON_ADMIN_PASSWORD);
-  app = createApp();
 });
-
-function setupUserMock() {
-  getCollection.mockResolvedValue({
-    findOne: vi.fn().mockResolvedValue({
-      username: ADMIN_USERNAME,
-      hashedPassword: hashedAdminPassword,
-      isAdmin: true,
-    }),
-  });
-}
 
 describe("POST /api/user/login + logout", () => {
   beforeEach(() => {
@@ -57,7 +49,7 @@ describe("POST /api/user/login + logout", () => {
   });
 
   it("logs in and then logs out successfully", async () => {
-    setupUserMock();
+    setupAdminUserMock(getCollection);
 
     const loginRes = await request(app)
       .post("/api/user/login")
@@ -75,7 +67,7 @@ describe("POST /api/user/login + logout", () => {
   });
 
   it("does not return { message: 'Logged in' } when already logged in", async () => {
-    setupUserMock();
+    setupAdminUserMock(getCollection);
 
     const loginRes = await request(app)
       .post("/api/user/login")
@@ -92,7 +84,7 @@ describe("POST /api/user/login + logout", () => {
   });
 
   it("does not return { message: 'Logged in' } when password is wrong", async () => {
-    setupUserMock();
+    setupAdminUserMock(getCollection);
 
     const res = await request(app)
       .post("/api/user/login")
