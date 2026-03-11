@@ -18,13 +18,18 @@ const MIDDLEWARE_ERROR_MAP = Object.freeze({
   },
   ADMIN_AUTH_FAILED: {
     status: HTTP_STATUS.FORBIDDEN,
-    message: "Failed to authorize admin",
-    code: "ADMIN_AUTH_FAILED",
+    message: "Unauthorized action",
+    code: "UNAUTHORIZED_ACTION",
   },
   ALREADY_LOGGED_IN: {
     status: HTTP_STATUS.FORBIDDEN,
     message: "Action blocked for logged-in user",
     code: "ALREADY_LOGGED_IN",
+  },
+  ADMIN_NOT_ALLOWED: {
+    status: HTTP_STATUS.FORBIDDEN,
+    message: "Action not allowed for admin users",
+    code: "ADMIN_NOT_ALLOWED",
   },
 });
 

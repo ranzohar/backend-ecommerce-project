@@ -12,16 +12,18 @@ import {
   addUser,
   getUserByUsername,
   updateUserByUsername,
+  getUsers,
 } from "./user.service.js";
 import { logDebug, logError, logInfo } from "#src/log.service.js";
 import {
   UPDATE_ERRORS,
   SIGNUP_ERRORS,
   LOGIN_ERRORS,
+  LIST_ERRORS,
   // REMOVE_ERRORS,
 } from "./user.error.js";
 
-const USER_FIELDS = ["username", "password"];
+const USER_FIELDS = ["username", "password", "fname", "lname"];
 const LOGIN_COOKIE_OPTIONS = { httpOnly: true, sameSite: "lax" };
 
 export async function signup(req, res) {
@@ -78,6 +80,14 @@ export async function update(req, res) {
       { updatedUser },
       `Response updated user sent with status ${res.statusCode}`,
     );
+  });
+}
+
+export async function list(req, res) {
+  crudlSafe(res, LIST_ERRORS, async () => {
+    const users = await getUsers();
+    res.json({ users });
+    logInfo(`Response list users sent with status ${res.statusCode}`);
   });
 }
 

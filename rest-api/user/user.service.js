@@ -1,12 +1,13 @@
 import { logDebug } from "#src/log.service.js";
 import {
   getCollection,
-  USERS_COLLECTION as COLLECTION_NAME,
+  USERS_COLLECTION,
+  ORDER_COLLECTION,
 } from "#src/mongodb/mongodb.service.js";
 import { toObjectId, requiredArguments } from "#src/utils/index.js";
 
 async function verifyUsernameNotTaken(username, { excludeUserId } = {}) {
-  const users = await getCollection(COLLECTION_NAME);
+  const users = await getCollection(USERS_COLLECTION);
   if (!username) {
     return false;
   }
@@ -31,7 +32,7 @@ async function verifyUsernameNotTaken(username, { excludeUserId } = {}) {
 
 export async function addUser(user) {
   requiredArguments([user?.username, "username"], [user?._id, "userId"]);
-  const usersCollection = await getCollection(COLLECTION_NAME);
+  const usersCollection = await getCollection(USERS_COLLECTION);
   await verifyUsernameNotTaken(user.username);
   const result = await usersCollection.insertOne(user);
   if (!result.acknowledged) {
@@ -44,7 +45,7 @@ export async function addUser(user) {
 }
 
 export async function getUserByUsername(username) {
-  const users = await getCollection(COLLECTION_NAME);
+  const users = await getCollection(USERS_COLLECTION);
   if (!username) {
     return null;
   }
@@ -58,7 +59,7 @@ export async function getUserByUsername(username) {
 
 export async function getUserById(userId) {
   requiredArguments([userId, "userId"]);
-  const users = await getCollection(COLLECTION_NAME);
+  const users = await getCollection(USERS_COLLECTION);
   const objectId = toObjectId(userId);
   if (!objectId) {
     return null;
@@ -68,7 +69,7 @@ export async function getUserById(userId) {
 }
 
 export async function updateUserByUsername(username, updates) {
-  const users = await getCollection(COLLECTION_NAME);
+  const users = await getCollection(USERS_COLLECTION);
 
   const existing = await users.findOne(
     { username },
@@ -97,7 +98,29 @@ export async function updateUserByUsername(username, updates) {
 }
 
 // export async function deleteUserByUsername(username) {
-//   const users = await getCollection(COLLECTION_NAME);
+//   const users = await getCollection(USERS_COLLECTION);
 //   const result = await users.deleteOne({ username: username });
 //   return result.deletedCount > 0;
 // }
+
+export async function getUsers() {
+  const users = await getCollection(USERS_COLLECTION);
+  const pipeline = [
+    {
+      $lookup: {
+        from: ORDER_COLLECTION,
+        localField: "_id",
+        foreignField: "_userId",
+        as: "orders",
+      },
+    },
+    {
+      $project: {
+        hashedPassword: 0,
+        "orders._id": 0,
+        "orders._userId": 0,
+      },
+    },
+  ];
+  return await users.aggregate(pipeline).toArray();
+}

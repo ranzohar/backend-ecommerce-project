@@ -6,7 +6,7 @@ import cookieParser from "cookie-parser";
 
 import { logError, logInfo } from "./log.service.js";
 import { initPromise } from "./log.service.js";
-// import { helloRoutes } from "./rest-api/hello_world/hello.routes.js";
+import { helloRoutes } from "./rest-api/hello_world/hello.routes.js";
 import { idRoutes } from "./rest-api/id/getid.js";
 import { productRoutes } from "./rest-api/product/product.routes.js";
 import { userRoutes } from "./rest-api/user/user.routes.js";
@@ -31,7 +31,7 @@ app.use(cookieParser());
 app.use(express.static("public"));
 app.use(express.json());
 app.use(setAls);
-// app.use("/api/hello", helloRoutes);
+app.use("/api/hello", helloRoutes);
 app.use("/api/id", idRoutes);
 app.use("/api/product", productRoutes);
 app.use("/api/user", userRoutes);
@@ -41,7 +41,7 @@ app.get(/.*/, (req, res) => {
 });
 
 // Start server
-const port = 3000;
+const port = process.env.PORT || 3000;
 const server = app.listen(port, () => {
   logInfo(`Server running at http://localhost:${port}`);
 });

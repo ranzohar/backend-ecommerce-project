@@ -66,37 +66,37 @@ export async function addProductHandler(req, res) {
   }
 }
 
-export async function deleteProductHandler(req, res) {
-  const { productId } = req.params;
-  if (!productId) {
-    res.status(400).json({
-      message: "Product id is required",
-      code: "PRODUCT_ID_REQUIRED",
-    });
-    return;
-  }
+// export async function deleteProductHandler(req, res) {
+//   const { productId } = req.params;
+//   if (!productId) {
+//     res.status(400).json({
+//       message: "Product id is required",
+//       code: "PRODUCT_ID_REQUIRED",
+//     });
+//     return;
+//   }
 
-  try {
-    const deleted = await deleteProduct(productId);
-    if (!deleted) {
-      res.status(404).json({
-        message: "Product not found",
-        code: "PRODUCT_NOT_FOUND",
-        productId,
-      });
-      return;
-    }
-    res.json({ message: "Deleted product", productId });
-    logInfo(`Response delete product sent with status ${res.statusCode}`);
-  } catch (err) {
-    logError(`Failed to delete product data: ${err?.message ?? err}`);
-    res.status(500).json({
-      message: "Failed to delete product data",
-      code: "DELETE_PRODUCT_FAILED",
-      details: err?.message,
-    });
-  }
-}
+//   try {
+//     const deleted = await deleteProduct(productId);
+//     if (!deleted) {
+//       res.status(404).json({
+//         message: "Product not found",
+//         code: "PRODUCT_NOT_FOUND",
+//         productId,
+//       });
+//       return;
+//     }
+//     res.json({ message: "Deleted product", productId });
+//     logInfo(`Response delete product sent with status ${res.statusCode}`);
+//   } catch (err) {
+//     logError(`Failed to delete product data: ${err?.message ?? err}`);
+//     res.status(500).json({
+//       message: "Failed to delete product data",
+//       code: "DELETE_PRODUCT_FAILED",
+//       details: err?.message,
+//     });
+//   }
+// }
 
 export async function listProductsHandler(req, res) {
   try {

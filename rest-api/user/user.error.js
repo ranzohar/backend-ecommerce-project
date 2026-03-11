@@ -92,3 +92,11 @@ export const ADD_USER_ERRORS = Object.freeze({
     message: "Failed to create user",
   }),
 });
+
+export const LIST_ERRORS = Object.freeze({
+  DEFAULT: Object.freeze({
+    status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+    code: "LIST_USERS_FAILED",
+    message: "Failed to list users",
+  }),
+});

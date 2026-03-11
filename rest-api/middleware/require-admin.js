@@ -1,7 +1,4 @@
-import {
-  getUserById,
-  getUserByUsername,
-} from "#src/rest-api/user/user.service.js";
+import { getUserByUsername } from "#src/rest-api/user/user.service.js";
 import { requireLogin } from "./require-login.js";
 import { warnAndRespond } from "#src/utils/index.js";
 import MIDDLEWARE_ERROR_MAP from "./middleware.errormaps.js";
@@ -12,7 +9,7 @@ export async function requireAdmin(req, res, next) {
     try {
       const user = await getUserByUsername(req.user?.username);
       if (!user?.isAdmin) {
-        warnAndRespond(res, REQUIRED_ADMIN, err);
+        warnAndRespond(res, REQUIRED_ADMIN);
         return;
       }
       next();
