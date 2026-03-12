@@ -1,7 +1,7 @@
 import { crudlSafe, pickFields, requiredArguments } from "#src/utils/index.js";
 import { logDebug, logInfo } from "#src/log.service.js";
-import { ADD_ORDER_ERRORS, GET_ORDERS_ERRORS } from "./order.error.js";
-import { addOrder, getOrders, getOrdersByUser } from "./order.service.js";
+import { ADD_ORDER_ERRORS, GET_ORDERS_ERRORS, GET_STATS_ERRORS } from "./order.error.js";
+import { addOrder, getOrders, getOrdersByUser, getStats, getStatsByUser, getStatsByProduct } from "./order.service.js";
 
 const ORDER_FIELDS = ["products"];
 
@@ -33,5 +33,23 @@ export async function getAll(req, res) {
       `Received get all orders request with query: ${JSON.stringify(req.query)}`,
     );
     return res.json(await getOrders(req.query.sortBy ?? "createdAt"));
+  });
+}
+
+export async function stats(req, res) {
+  crudlSafe(res, GET_STATS_ERRORS, async () => {
+    return res.json(await getStats());
+  });
+}
+
+export async function statsByUser(req, res) {
+  crudlSafe(res, GET_STATS_ERRORS, async () => {
+    return res.json(await getStatsByUser(req.params.username));
+  });
+}
+
+export async function statsByProduct(req, res) {
+  crudlSafe(res, GET_STATS_ERRORS, async () => {
+    return res.json(await getStatsByProduct(req.params.title));
   });
 }

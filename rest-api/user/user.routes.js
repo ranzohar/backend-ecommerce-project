@@ -9,10 +9,10 @@ import {
 
 const router = Router();
 
-router.post("/signup", requireGuest, signup);
 router.post("/login", requireGuest, login);
 router.post("/logout", requireLogin, logout);
-router.patch("/", requireLogin, requireNonAdmin, update);
+router.post("/signup", requireGuest, signup);
 router.get("/list", requireAdmin, list);
+router.patch("/", requireLogin, requireNonAdmin, update);
 
 export const userRoutes = router;

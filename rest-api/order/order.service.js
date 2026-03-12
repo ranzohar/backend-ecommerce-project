@@ -173,3 +173,67 @@ export async function getOrders(sortBy) {
   }
   return await ordersCollection.aggregate(pipeline).toArray();
 }
+
+function buildStatsPipeline() {
+  return [
+    { $unwind: "$products" },
+    {
+      $lookup: {
+        from: PRODUCTS_COLLECTION,
+        localField: "products._productId",
+        foreignField: "_id",
+        as: "productDetails",
+      },
+    },
+    { $unwind: "$productDetails" },
+    {
+      $group: {
+        _id: "$productDetails.title",
+        totalQuantity: { $sum: "$products.quantity" },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        title: "$_id",
+        totalQuantity: 1,
+      },
+    },
+  ];
+}
+
+function toStatsObject(results) {
+  return results.reduce((acc, { title, totalQuantity }) => {
+    acc[title] = totalQuantity;
+    return acc;
+  }, {});
+}
+
+export async function getStats() {
+  logDebug("Getting product stats for all orders");
+  const ordersCollection = await getCollection(ORDER_COLLECTION);
+  const results = await ordersCollection.aggregate(buildStatsPipeline()).toArray();
+  return toStatsObject(results);
+}
+
+export async function getStatsByUser(username) {
+  logDebug(`Getting product stats for user: ${username}`);
+  requiredArguments([username, "username"]);
+  const { _id } = await getUserByUsername(username);
+  const ordersCollection = await getCollection(ORDER_COLLECTION);
+  const pipeline = [{ $match: { _userId: _id } }, ...buildStatsPipeline()];
+  const results = await ordersCollection.aggregate(pipeline).toArray();
+  return toStatsObject(results);
+}
+
+export async function getStatsByProduct(title) {
+  logDebug(`Getting stats for product: ${title}`);
+  requiredArguments([title, "title"]);
+  const ordersCollection = await getCollection(ORDER_COLLECTION);
+  const pipeline = [
+    ...buildStatsPipeline(),
+    { $match: { title } },
+  ];
+  const results = await ordersCollection.aggregate(pipeline).toArray();
+  return toStatsObject(results);
+}

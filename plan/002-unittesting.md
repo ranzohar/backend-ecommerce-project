@@ -26,6 +26,7 @@
 3. **What should we mock for file-backed services (`product.service`)?**
    - **A. Mock `readJsonFile` / `writeJsonFile`** _(suggested)_ — Intercept at the utility level, no real file I/O in tests.
    - **B. Use a temp directory with real files** — More integration-like, slower, harder to reset between tests.
+     We do not have anymore json files data.
 
 4. **Where should test files live?**
    - **A. Co-located next to source files** (e.g. `rest-api/user/user.service.test.js`) — Easy to navigate, common convention.

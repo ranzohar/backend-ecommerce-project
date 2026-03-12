@@ -25,3 +25,11 @@ export const GET_ORDERS_ERRORS = Object.freeze({
     message: "Failed to retrieve orders",
   }),
 });
+
+export const GET_STATS_ERRORS = Object.freeze({
+  DEFAULT: Object.freeze({
+    status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+    code: "GET_STATS_FAILED",
+    message: "Failed to retrieve stats",
+  }),
+});
