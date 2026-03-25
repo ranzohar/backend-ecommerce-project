@@ -2,6 +2,7 @@ import { logWarn, logError } from "#src/log.service.js";
 import { requiredArguments } from "#src/utils/index.js";
 
 export const HTTP_STATUS = Object.freeze({
+  OK: 200,
   BAD_REQUEST: 400,
   UNAUTHORIZED: 401,
   FORBIDDEN: 403,

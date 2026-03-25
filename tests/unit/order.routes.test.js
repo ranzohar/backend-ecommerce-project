@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#src/utils/http-response.js";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import request from "supertest";
 import { createApp } from "#src/tests/helpers/app.js";
@@ -60,7 +61,7 @@ describe("POST / route", () => {
       .set("Cookie", loginCookies)
       .send(MOCK_ORDERS[0]);
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(HTTP_STATUS.OK);
   });
 
   it("admin user is blocked from adding an order (requireNonAdmin)", async () => {
@@ -80,14 +81,14 @@ describe("POST / route", () => {
       .set("Cookie", loginCookies)
       .send(MOCK_ORDERS[0]);
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(HTTP_STATUS.FORBIDDEN);
     expect(res.body.code).toBe("ADMIN_NOT_ALLOWED");
   });
 
   it("unauthenticated request is blocked (requireLogin)", async () => {
     const res = await request(app).post("/api/order/").send(MOCK_ORDERS[0]);
 
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(HTTP_STATUS.UNAUTHORIZED);
     expect(res.body.code).toBe("LOGIN_REQUIRED");
   });
 });
@@ -117,7 +118,7 @@ describe("GET / route", () => {
       .get("/api/order/")
       .set("Cookie", loginCookies);
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(HTTP_STATUS.OK);
   });
 
   it("admin user is blocked from getting their orders (requireNonAdmin)", async () => {
@@ -136,14 +137,14 @@ describe("GET / route", () => {
       .get("/api/order/")
       .set("Cookie", loginCookies);
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(HTTP_STATUS.FORBIDDEN);
     expect(res.body.code).toBe("ADMIN_NOT_ALLOWED");
   });
 
   it("unauthenticated request is blocked (requireLogin)", async () => {
     const res = await request(app).get("/api/order/");
 
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(HTTP_STATUS.UNAUTHORIZED);
     expect(res.body.code).toBe("LOGIN_REQUIRED");
   });
 });

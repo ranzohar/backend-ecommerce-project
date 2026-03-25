@@ -3,35 +3,31 @@ import {
   PRODUCTS_COLLECTION,
   CATEGORIES_COLLECTION,
 } from "#src/mongodb/mongodb.service.js";
+
 import { rethrowDuplicate } from "#src/utils/index.js";
 
 export async function upsertProduct(product) {
   const categoriesCollection = await getCollection(CATEGORIES_COLLECTION);
-
   const existingCategory = await categoriesCollection.findOne({
     name: product.category,
   });
-
   if (!existingCategory) {
     throw new Error("CATEGORY_NOT_FOUND");
   }
-
   const collection = await getCollection(PRODUCTS_COLLECTION);
-
+  // Check for duplicate title
+  const existingProduct = await collection.findOne({ title: product.title });
+  if (existingProduct) {
+    throw new Error("PRODUCT_TITLE_TAKEN");
+  }
   try {
-    await collection.updateOne(
-      { title: product.title },
-      [
-        { $set: product },
-        { $set: { categoryId: existingCategory._id } },
-        { $unset: "category" },
-      ],
-      { upsert: true },
-    );
+    await collection.insertOne({
+      ...product,
+      categoryId: existingCategory._id,
+    });
   } catch (err) {
     rethrowDuplicate(err, "PRODUCT_TITLE_TAKEN");
   }
-
   return product;
 }
 

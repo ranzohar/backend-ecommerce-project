@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#src/utils/http-response.js";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import request from "supertest";
 import { createApp } from "#src/tests/helpers/app.js";
@@ -58,7 +59,7 @@ describe("/login /logout route", () => {
       .set("Cookie", loginCookies)
       .send({ username: ADMIN_USERNAME, password: ADMIN_PASSWORD });
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(HTTP_STATUS.FORBIDDEN);
     expect(res.body.code).toBe("ALREADY_LOGGED_IN");
   });
 
@@ -69,14 +70,14 @@ describe("/login /logout route", () => {
       .post("/api/user/logout")
       .set("Cookie", loginCookies);
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(HTTP_STATUS.OK);
     expect(res.body.message).toBe("Logged out");
   });
 
   it("blocks logout when not logged in (requireLogin)", async () => {
     const res = await request(app).post("/api/user/logout");
 
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(HTTP_STATUS.UNAUTHORIZED);
     expect(res.body.code).toBe("LOGIN_REQUIRED");
   });
 });
@@ -95,7 +96,7 @@ describe("/signup route", () => {
 
     const res = await request(app).post("/api/user/signup").send(NEW_USER);
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(HTTP_STATUS.OK);
     expect(res.body.username).toBe(NEW_USER.username);
     expect(res.headers["set-cookie"]).toBeDefined();
   });
@@ -108,7 +109,7 @@ describe("/signup route", () => {
       .set("Cookie", loginCookies)
       .send(NEW_USER);
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(HTTP_STATUS.FORBIDDEN);
     expect(res.body.code).toBe("ALREADY_LOGGED_IN");
   });
 });
@@ -137,7 +138,7 @@ describe("/list route", () => {
       .get("/api/user/list")
       .set("Cookie", loginCookies);
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(HTTP_STATUS.OK);
     expect(res.body.users).toEqual(MOCK_USER_LIST);
   });
 
@@ -148,7 +149,7 @@ describe("/list route", () => {
       .get("/api/user/list")
       .set("Cookie", loginCookies);
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(HTTP_STATUS.FORBIDDEN);
     expect(res.body.code).toBe("ADMIN_REQUIRED");
   });
 });
@@ -173,14 +174,14 @@ describe("PATCH / route", () => {
       .set("Cookie", loginCookies)
       .send(UPDATE_FIELDS);
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(HTTP_STATUS.OK);
     expect(res.body.updatedUser).toMatchObject(UPDATE_FIELDS);
   });
 
   it("unauthenticated request is blocked (requireLogin)", async () => {
     const res = await request(app).patch("/api/user/").send(UPDATE_FIELDS);
 
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(HTTP_STATUS.UNAUTHORIZED);
     expect(res.body.code).toBe("LOGIN_REQUIRED");
   });
 
@@ -192,7 +193,7 @@ describe("PATCH / route", () => {
       .set("Cookie", loginCookies)
       .send(UPDATE_FIELDS);
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(HTTP_STATUS.FORBIDDEN);
     expect(res.body.code).toBe("ADMIN_NOT_ALLOWED");
   });
 });

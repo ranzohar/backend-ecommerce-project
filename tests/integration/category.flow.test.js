@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#src/utils/http-response.js";
 import { describe, it, expect, beforeAll } from "vitest";
 import { createApp } from "#src/tests/helpers/app.js";
 import {
@@ -6,7 +7,12 @@ import {
   MOCK_CATEGORIES,
   MOCK_PRODUCTS,
 } from "#src/tests/helpers/mocks.js";
-import { clearAllCollections, seedUser, ADMIN_USERNAME, ADMIN_PASSWORD } from "./helpers/db.js";
+import {
+  clearAllCollections,
+  seedUser,
+  ADMIN_USERNAME,
+  ADMIN_PASSWORD,
+} from "./helpers/db.js";
 import { createAgent } from "./helpers/agent.js";
 
 const USER_USERNAME = NON_ADMIN_USERNAME;
@@ -22,7 +28,11 @@ describe("Category flow: add → list → update → delete + product category v
 
   beforeAll(async () => {
     await clearAllCollections();
-    await seedUser({ username: USER_USERNAME, password: USER_PASSWORD, isAdmin: false });
+    await seedUser({
+      username: USER_USERNAME,
+      password: USER_PASSWORD,
+      isAdmin: false,
+    });
 
     adminAgent = createAgent();
     await adminAgent.loginAs(ADMIN_USERNAME, ADMIN_PASSWORD);
@@ -36,14 +46,14 @@ describe("Category flow: add → list → update → delete + product category v
       .post("/api/category/")
       .send({ name: CATEGORY_NAME });
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(HTTP_STATUS.FORBIDDEN);
   });
 
   it("blocks anonymous from listing categories", async () => {
     const app = createApp();
     const { default: request } = await import("supertest");
     const res = await request(app).get("/api/category/");
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(HTTP_STATUS.UNAUTHORIZED);
   });
 
   it("admin adds a new category", async () => {
@@ -51,7 +61,7 @@ describe("Category flow: add → list → update → delete + product category v
       .post("/api/category/")
       .send({ name: CATEGORY_NAME });
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(HTTP_STATUS.OK);
     expect(res.body.category.name).toBe(CATEGORY_NAME);
     expect(res.body.category.id).toBeDefined();
     createdCategoryId = res.body.category.id;
@@ -60,17 +70,26 @@ describe("Category flow: add → list → update → delete + product category v
   it("trying to add a product with a non-existing category fails", async () => {
     const res = await adminAgent.agent
       .post("/api/product/")
-      .send({ title: PRODUCT_TITLE, price: 999, category: "NonExistentCategory", description: "A laptop" });
+      .send({
+        title: PRODUCT_TITLE,
+        price: 999,
+        category: "NonExistentCategory",
+        description: "A laptop",
+      });
 
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 
   it("logged-in user can list categories", async () => {
     const res = await userAgent.agent.get("/api/category/");
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(HTTP_STATUS.OK);
     expect(Array.isArray(res.body.categories)).toBe(true);
-    expect(res.body.categories.some((c) => { return c.name === CATEGORY_NAME; })).toBe(true);
+    expect(
+      res.body.categories.some((c) => {
+        return c.name === CATEGORY_NAME;
+      }),
+    ).toBe(true);
   });
 
   it("admin updates the category name", async () => {
@@ -78,7 +97,7 @@ describe("Category flow: add → list → update → delete + product category v
       .patch(`/api/category/${createdCategoryId}`)
       .send({ name: UPDATED_CATEGORY_NAME });
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(HTTP_STATUS.OK);
     expect(res.body.category.name).toBe(UPDATED_CATEGORY_NAME);
     expect(res.body.category.id).toBe(createdCategoryId);
   });
@@ -86,9 +105,14 @@ describe("Category flow: add → list → update → delete + product category v
   it("adding a product with the updated category name succeeds", async () => {
     const res = await adminAgent.agent
       .post("/api/product/")
-      .send({ title: PRODUCT_TITLE, price: 999, category: UPDATED_CATEGORY_NAME, description: "A laptop" });
+      .send({
+        title: PRODUCT_TITLE,
+        price: 999,
+        category: UPDATED_CATEGORY_NAME,
+        description: "A laptop",
+      });
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(HTTP_STATUS.OK);
     expect(res.body.product.title).toBe(PRODUCT_TITLE);
   });
 
@@ -97,26 +121,34 @@ describe("Category flow: add → list → update → delete + product category v
       .post("/api/category/")
       .send({ name: UPDATED_CATEGORY_NAME });
 
-    expect(res.status).toBe(409);
+    expect(res.status).toBe(HTTP_STATUS.CONFLICT);
     expect(res.body.code).toBe("CATEGORY_NAME_TAKEN");
   });
 
   it("admin deletes the category", async () => {
-    const res = await adminAgent.agent.delete(`/api/category/${createdCategoryId}`);
+    const res = await adminAgent.agent.delete(
+      `/api/category/${createdCategoryId}`,
+    );
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(HTTP_STATUS.OK);
     expect(res.body.categoryId).toBe(createdCategoryId);
   });
 
   it("deleted category no longer appears in the list", async () => {
     const res = await userAgent.agent.get("/api/category/");
 
-    expect(res.status).toBe(200);
-    expect(res.body.categories.some((c) => { return c.id === createdCategoryId; })).toBe(false);
+    expect(res.status).toBe(HTTP_STATUS.OK);
+    expect(
+      res.body.categories.some((c) => {
+        return c.id === createdCategoryId;
+      }),
+    ).toBe(false);
   });
 
   it("deleting a non-existing category returns 404", async () => {
-    const res = await adminAgent.agent.delete(`/api/category/${createdCategoryId}`);
-    expect(res.status).toBe(404);
+    const res = await adminAgent.agent.delete(
+      `/api/category/${createdCategoryId}`,
+    );
+    expect(res.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 });

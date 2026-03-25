@@ -1,15 +1,9 @@
-import {
-  upsertProduct,
-  editProduct,
-  getProduct,
-  listProducts,
-} from "./product.service.js";
+import { upsertProduct, getProduct, listProducts } from "./product.service.js";
 import { logInfo } from "#src/log.service.js";
 import { pickFields, crudlSafe } from "#src/utils/index.js";
 import {
   GET_PRODUCT_ERRORS,
   ADD_PRODUCT_ERRORS,
-  EDIT_PRODUCT_ERRORS,
   LIST_PRODUCTS_ERRORS,
 } from "./product.error.js";
 

@@ -5,6 +5,6 @@ export * from "./http-response.js";
 export * from "./mongodb.js";
 export * from "./pick-fields.js";
 export * from "./regex.js";
-export * from "./required-arguments.js";
+export { requiredArguments } from "./required-arguments.js";
 export * from "./safe.js";
 export * from "../crypt-service.js";

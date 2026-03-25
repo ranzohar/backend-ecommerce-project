@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#src/utils/http-response.js";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import request from "supertest";
 import { createApp } from "#src/tests/helpers/app.js";
@@ -49,7 +50,7 @@ describe("GET / route", () => {
       .get("/api/category/")
       .set("Cookie", loginCookies);
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(HTTP_STATUS.OK);
     expect(res.body.categories).toBeDefined();
   });
 
@@ -66,14 +67,14 @@ describe("GET / route", () => {
       .get("/api/category/")
       .set("Cookie", loginCookies);
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(HTTP_STATUS.OK);
     expect(res.body.categories).toBeDefined();
   });
 
   it("unauthenticated request is blocked (requireLogin)", async () => {
     const res = await request(app).get("/api/category/");
 
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(HTTP_STATUS.UNAUTHORIZED);
     expect(res.body.code).toBe("LOGIN_REQUIRED");
   });
 });
@@ -102,7 +103,7 @@ describe("POST / route", () => {
       .set("Cookie", loginCookies)
       .send(NEW_CATEGORY);
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(HTTP_STATUS.OK);
     expect(res.body.category).toBeDefined();
   });
 
@@ -123,14 +124,14 @@ describe("POST / route", () => {
       .set("Cookie", loginCookies)
       .send(NEW_CATEGORY);
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(HTTP_STATUS.FORBIDDEN);
     expect(res.body.code).toBe("ADMIN_REQUIRED");
   });
 
   it("unauthenticated request is blocked (requireAdmin)", async () => {
     const res = await request(app).post("/api/category/").send(NEW_CATEGORY);
 
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(HTTP_STATUS.UNAUTHORIZED);
     expect(res.body.code).toBe("LOGIN_REQUIRED");
   });
 });
@@ -159,7 +160,7 @@ describe("PATCH /:categoryId route", () => {
       .set("Cookie", loginCookies)
       .send(UPDATE_FIELDS);
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(HTTP_STATUS.OK);
     expect(res.body.category).toBeDefined();
   });
 
@@ -180,7 +181,7 @@ describe("PATCH /:categoryId route", () => {
       .set("Cookie", loginCookies)
       .send(UPDATE_FIELDS);
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(HTTP_STATUS.FORBIDDEN);
     expect(res.body.code).toBe("ADMIN_REQUIRED");
   });
 
@@ -189,7 +190,7 @@ describe("PATCH /:categoryId route", () => {
       .patch(`/api/category/${MOCK_CATEGORY_ID}`)
       .send(UPDATE_FIELDS);
 
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(HTTP_STATUS.UNAUTHORIZED);
     expect(res.body.code).toBe("LOGIN_REQUIRED");
   });
 });
@@ -217,7 +218,7 @@ describe("DELETE /:categoryId route", () => {
       .delete(`/api/category/${MOCK_CATEGORY_ID}`)
       .set("Cookie", loginCookies);
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(HTTP_STATUS.OK);
     expect(res.body.message).toBe("Deleted category");
   });
 
@@ -237,14 +238,14 @@ describe("DELETE /:categoryId route", () => {
       .delete(`/api/category/${MOCK_CATEGORY_ID}`)
       .set("Cookie", loginCookies);
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(HTTP_STATUS.FORBIDDEN);
     expect(res.body.code).toBe("ADMIN_REQUIRED");
   });
 
   it("unauthenticated request is blocked (requireAdmin)", async () => {
     const res = await request(app).delete(`/api/category/${MOCK_CATEGORY_ID}`);
 
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(HTTP_STATUS.UNAUTHORIZED);
     expect(res.body.code).toBe("LOGIN_REQUIRED");
   });
 });

@@ -1,3 +1,4 @@
+import { HTTP_STATUS } from "#src/utils/http-response.js";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import request from "supertest";
 import { createApp } from "#src/tests/helpers/app.js";
@@ -41,7 +42,7 @@ describe("GET / route", () => {
       .get("/api/product/")
       .set("Cookie", loginCookies);
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(HTTP_STATUS.OK);
     expect(res.body.products).toBeDefined();
   });
 
@@ -58,14 +59,14 @@ describe("GET / route", () => {
       .get("/api/product/")
       .set("Cookie", loginCookies);
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(HTTP_STATUS.OK);
     expect(res.body.products).toBeDefined();
   });
 
   it("guest user is blocked from the product list", async () => {
     const res = await request(app).get("/api/product/");
 
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(HTTP_STATUS.UNAUTHORIZED);
     expect(res.body.code).toBe("LOGIN_REQUIRED");
   });
 });
@@ -96,9 +97,13 @@ describe("POST / route", () => {
           findOne: vi.fn().mockResolvedValue(MOCK_CATEGORIES[0]),
         });
       }
-      return Promise.resolve({
-        updateOne: vi.fn().mockResolvedValue({ acknowledged: true }),
-      });
+      if (collectionName === mongoService.PRODUCTS_COLLECTION) {
+        return Promise.resolve({
+          findOne: vi.fn().mockResolvedValue(null),
+          insertOne: vi.fn().mockResolvedValue({ acknowledged: true }),
+        });
+      }
+      return Promise.resolve({});
     });
 
     const res = await request(app)
@@ -106,7 +111,7 @@ describe("POST / route", () => {
       .set("Cookie", loginCookies)
       .send(NEW_PRODUCT);
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(HTTP_STATUS.OK);
     expect(res.body.product).toBeDefined();
   });
 
@@ -122,14 +127,14 @@ describe("POST / route", () => {
       .set("Cookie", loginCookies)
       .send(NEW_PRODUCT);
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(HTTP_STATUS.FORBIDDEN);
     expect(res.body.code).toBe("ADMIN_REQUIRED");
   });
 
   it("guest user is blocked from adding a product", async () => {
     const res = await request(app).post("/api/product/").send(NEW_PRODUCT);
 
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(HTTP_STATUS.UNAUTHORIZED);
     expect(res.body.code).toBe("LOGIN_REQUIRED");
   });
 });
