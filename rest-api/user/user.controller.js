@@ -6,6 +6,7 @@ import {
   pickFieldsWithPassword,
   encryptToken,
   comparePassword,
+  pickFields,
 } from "#src/utils/index.js";
 
 import {
@@ -13,17 +14,18 @@ import {
   getUserByUsername,
   updateUserByUsername,
   getUsers,
+  removeUser,
 } from "./user.service.js";
-import { logDebug, logError, logInfo } from "#src/log.service.js";
+import { logDebug, logInfo } from "#src/log.service.js";
 import {
   UPDATE_ERRORS,
   SIGNUP_ERRORS,
   LOGIN_ERRORS,
   LIST_ERRORS,
-  // REMOVE_ERRORS,
 } from "./user.error.js";
 
-const USER_FIELDS = ["username", "password", "fname", "lname"];
+const USER_FIELDS = ["username", "password", "fname", "lname", "allowOthers"];
+const ME_RESPONSE_FIELDS = ["username", "isAdmin", "uid", "fname", "lname", "allowOthers"];
 const LOGIN_COOKIE_OPTIONS = { httpOnly: true, sameSite: "lax" };
 
 export async function signup(req, res) {
@@ -31,13 +33,34 @@ export async function signup(req, res) {
     const userInput = await pickFieldsWithPassword(req.body, USER_FIELDS);
     userInput._id = getNewId();
 
+    // Validate username is not empty
+    if (!userInput.username || userInput.username.trim() === "") {
+      throw new Error("EMPTY_USERNAME_NOT_ALLOWED");
+    }
+
     const createdUser = await addUser(userInput);
-    loginAndRepond(
-      res,
-      createdUser,
-      { username: userInput.username },
-      `Added user: ${JSON.stringify(userInput, null, 2)}.`,
-    );
+    try {
+      const response = pickFields(createdUser, ME_RESPONSE_FIELDS);
+      response.uid = createdUser._id;
+      loginAndRepond(
+        res,
+        createdUser,
+        response,
+        `Added user: ${JSON.stringify(userInput, null, 2)}.`,
+      );
+    } catch (error) {
+      // If login fails after user creation, remove the user
+      await removeUser(createdUser._id);
+      throw error;
+    }
+  });
+}
+
+export async function me(req, res) {
+  crudlSafe(res, {}, async () => {
+    const response = pickFields(req.user, ME_RESPONSE_FIELDS);
+    response.uid = req.user._id;
+    res.json(response);
   });
 }
 
@@ -50,12 +73,14 @@ export async function login(req, res) {
     );
     const password = req.body.password;
     const userInput = await pickFieldsWithPassword(req.body, USER_FIELDS);
-    await validatePassword(userInput, password);
+    const existingUser = await validatePassword(userInput, password);
+    const response = pickFields(existingUser, ME_RESPONSE_FIELDS);
+    response.uid = existingUser._id;
     loginAndRepond(
       res,
-      userInput,
-      { message: "Logged in" },
-      `Login token issued for: ${JSON.stringify(userInput, null, 2)}. code:${res.statusCode}`,
+      existingUser,
+      response,
+      `Login token issued for: ${JSON.stringify(existingUser, null, 2)}. code:${res.statusCode}`,
     );
   });
 }
@@ -69,6 +94,23 @@ export async function logout(req, res) {
 export async function update(req, res) {
   crudlSafe(res, UPDATE_ERRORS, async () => {
     const userInput = await pickFieldsWithPassword(req.body, USER_FIELDS);
+
+    // Validate username is not empty if provided
+    if (userInput.username !== undefined && userInput.username.trim() === "") {
+      throw new Error("EMPTY_USERNAME_NOT_ALLOWED");
+    }
+
+    // If updating password, require and verify current password
+    if (userInput.password) {
+      if (!req.body.currentPassword) {
+        throw new Error("CURRENT_PASSWORD_REQUIRED");
+      }
+      const existingUser = await getUserByUsername(req.user.username);
+      if (!(await comparePassword(req.body.currentPassword, existingUser.hashedPassword))) {
+        throw new Error("INVALID_CURRENT_PASSWORD");
+      }
+    }
+
     const updatedUser = await updateUserByUsername(
       req.user?.username,
       userInput,
@@ -90,28 +132,6 @@ export async function list(req, res) {
     logInfo(`Response list users sent with status ${res.statusCode}`);
   });
 }
-
-// export async function remove(req, res) {
-//   crudlSafe(res, REMOVE_ERRORS, async () => {
-//     const username = req.body?.username;
-//     if (!username) {
-//       throw new Error("USERNAME_REQUIRED");
-//     }
-
-//     const user = await getUserByUsername(username);
-//     if (user?.isAdmin) {
-//       throw new Error("REQUIRE_ADMIN");
-//     }
-
-//     const deleted = await deleteUserByUsername(username);
-//     if (!deleted) {
-//       throw new Error("USER_NOT_FOUND");
-//     }
-
-//     res.json({ message: "Deleted user" });
-//     logInfo(`Response delete user sent with status ${res.statusCode}`);
-//   });
-// }
 
 function loginAndRepond(res, user, responsePayload, logMessage) {
   issueLoginCookie(res, user);
@@ -135,4 +155,5 @@ async function validatePassword(user, password) {
   if (!(await comparePassword(password, existingUser.hashedPassword))) {
     throw new Error("INVALID_USERNAME_OR_PASSWORD");
   }
+  return existingUser;
 }

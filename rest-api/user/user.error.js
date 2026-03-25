@@ -36,11 +36,32 @@ export const REQUIRE_ADMIN = Object.freeze({
   message: "Admin privileges required",
 });
 
+export const CURRENT_PASSWORD_REQUIRED = Object.freeze({
+  status: HTTP_STATUS.BAD_REQUEST,
+  code: "CURRENT_PASSWORD_REQUIRED",
+  message: "Current password is required to change password",
+});
+
+export const INVALID_CURRENT_PASSWORD = Object.freeze({
+  status: HTTP_STATUS.BAD_REQUEST,
+  code: "INVALID_CURRENT_PASSWORD",
+  message: "Current password is invalid",
+});
+
+export const EMPTY_USERNAME_NOT_ALLOWED = Object.freeze({
+  status: HTTP_STATUS.BAD_REQUEST,
+  code: "EMPTY_USERNAME_NOT_ALLOWED",
+  message: "Username cannot be empty",
+});
+
 export const UPDATE_ERRORS = Object.freeze({
   USERNAME_TAKEN: USERNAME_TAKEN,
   USER_NOT_FOUND: USER_NOT_FOUND,
   USER_ID_REQUIRED: USER_ID_REQUIRED,
   USER_ID_INVALID: USER_ID_INVALID,
+  CURRENT_PASSWORD_REQUIRED: CURRENT_PASSWORD_REQUIRED,
+  INVALID_CURRENT_PASSWORD: INVALID_CURRENT_PASSWORD,
+  EMPTY_USERNAME_NOT_ALLOWED: EMPTY_USERNAME_NOT_ALLOWED,
   DEFAULT: Object.freeze({
     status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
     code: "UPDATE_USER_FAILED",
@@ -50,6 +71,7 @@ export const UPDATE_ERRORS = Object.freeze({
 
 export const SIGNUP_ERRORS = Object.freeze({
   USERNAME_TAKEN: USERNAME_TAKEN,
+  EMPTY_USERNAME_NOT_ALLOWED: EMPTY_USERNAME_NOT_ALLOWED,
   DEFAULT: Object.freeze({
     status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
     code: "SIGNUP_FAILED",

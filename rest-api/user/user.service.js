@@ -4,20 +4,46 @@ import {
   USERS_COLLECTION,
   ORDER_COLLECTION,
 } from "#src/mongodb/mongodb.service.js";
-import { toObjectId, requiredArguments, rethrowDuplicate } from "#src/utils/index.js";
+import {
+  toObjectId,
+  requiredArguments,
+  rethrowDuplicate,
+} from "#src/utils/index.js";
 
 export async function addUser(user) {
   requiredArguments([user?.username, "username"], [user?._id, "userId"]);
   const usersCollection = await getCollection(USERS_COLLECTION);
+
+  // Check if username already exists (case-insensitive)
+  const existingUser = await getUserByUsername(user.username);
+  if (existingUser) {
+    throw new Error(`USERNAME_TAKEN: ${user.username}`);
+  }
+
   try {
     const result = await usersCollection.insertOne(user);
     if (!result.acknowledged) {
       throw new Error("USER_CREATION_FAILED");
     }
   } catch (err) {
-    rethrowDuplicate(err, "USERNAME_TAKEN");
+    logDebug(`Error inserting user: ${err.message}`);
+    rethrowDuplicate(err, `USERNAME_TAKEN: ${user.username}`);
   }
   return user;
+}
+
+export async function removeUser(userId) {
+  requiredArguments([userId, "userId"]);
+  const usersCollection = await getCollection(USERS_COLLECTION);
+  const objectId = toObjectId(userId);
+  if (!objectId) {
+    throw new Error("INVALID_USER_ID");
+  }
+  const result = await usersCollection.deleteOne({ _id: objectId });
+  if (result.deletedCount === 0) {
+    throw new Error("USER_NOT_FOUND");
+  }
+  return true;
 }
 
 export async function getUserByUsername(username) {

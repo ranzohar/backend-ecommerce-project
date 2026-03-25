@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { signup, login, logout, update, list } from "./user.controller.js";
+import { signup, login, logout, update, list, me } from "./user.controller.js";
 import {
   requireLogin,
   requireGuest,
@@ -12,6 +12,7 @@ const router = Router();
 router.post("/login", requireGuest, login);
 router.post("/logout", requireLogin, logout);
 router.post("/signup", requireGuest, signup);
+router.get("/me", requireLogin, me);
 router.get("/list", requireAdmin, list);
 router.patch("/", requireLogin, requireNonAdmin, update);
 

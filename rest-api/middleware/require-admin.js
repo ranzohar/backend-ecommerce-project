@@ -8,7 +8,7 @@ export async function requireAdmin(req, res, next) {
   requireLogin(req, res, async () => {
     try {
       const user = await getUserByUsername(req.user?.username);
-      if (!user?.isAdmin) {
+      if (user?.isAdmin !== true && user?.isAdmin !== "true") {
         warnAndRespond(res, REQUIRED_ADMIN);
         return;
       }
