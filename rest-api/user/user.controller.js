@@ -38,6 +38,11 @@ export async function signup(req, res) {
       throw new Error("EMPTY_USERNAME_NOT_ALLOWED");
     }
 
+    // Validate fname and lname are not empty
+    if (!userInput.fname || userInput.fname.trim() === "" || !userInput.lname || userInput.lname.trim() === "") {
+      throw new Error("EMPTY_NAME_NOT_ALLOWED");
+    }
+
     const createdUser = await addUser(userInput);
     try {
       const response = pickFields(createdUser, ME_RESPONSE_FIELDS);

@@ -4,30 +4,22 @@ import {
   CATEGORIES_COLLECTION,
 } from "#src/mongodb/mongodb.service.js";
 
-import { rethrowDuplicate } from "#src/utils/index.js";
-
 export async function upsertProduct(product) {
-  const categoriesCollection = await getCollection(CATEGORIES_COLLECTION);
-  const existingCategory = await categoriesCollection.findOne({
-    name: product.category,
-  });
-  if (!existingCategory) {
-    throw new Error("CATEGORY_NOT_FOUND");
+  let categoryId;
+  if (product.category) {
+    const categoriesCollection = await getCollection(CATEGORIES_COLLECTION);
+    const existingCategory = await categoriesCollection.findOne({
+      name: product.category,
+    });
+    if (!existingCategory) {
+      throw new Error("CATEGORY_NOT_FOUND");
+    }
+    categoryId = existingCategory._id;
   }
   const collection = await getCollection(PRODUCTS_COLLECTION);
-  // Check for duplicate title
-  const existingProduct = await collection.findOne({ title: product.title });
-  if (existingProduct) {
-    throw new Error("PRODUCT_TITLE_TAKEN");
-  }
-  try {
-    await collection.insertOne({
-      ...product,
-      categoryId: existingCategory._id,
-    });
-  } catch (err) {
-    rethrowDuplicate(err, "PRODUCT_TITLE_TAKEN");
-  }
+  const doc = { ...product };
+  if (categoryId) doc.categoryId = categoryId;
+  await collection.replaceOne({ title: product.title }, doc, { upsert: true });
   return product;
 }
 

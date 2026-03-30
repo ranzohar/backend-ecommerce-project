@@ -110,6 +110,9 @@ export async function getUsers() {
   const users = await getCollection(USERS_COLLECTION);
   const pipeline = [
     {
+      $match: { isAdmin: { $ne: true } },
+    },
+    {
       $lookup: {
         from: ORDER_COLLECTION,
         localField: "_id",

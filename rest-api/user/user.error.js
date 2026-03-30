@@ -54,6 +54,12 @@ export const EMPTY_USERNAME_NOT_ALLOWED = Object.freeze({
   message: "Username cannot be empty",
 });
 
+export const EMPTY_NAME_NOT_ALLOWED = Object.freeze({
+  status: HTTP_STATUS.BAD_REQUEST,
+  code: "EMPTY_NAME_NOT_ALLOWED",
+  message: "First name and last name are required",
+});
+
 export const UPDATE_ERRORS = Object.freeze({
   USERNAME_TAKEN: USERNAME_TAKEN,
   USER_NOT_FOUND: USER_NOT_FOUND,
@@ -72,6 +78,7 @@ export const UPDATE_ERRORS = Object.freeze({
 export const SIGNUP_ERRORS = Object.freeze({
   USERNAME_TAKEN: USERNAME_TAKEN,
   EMPTY_USERNAME_NOT_ALLOWED: EMPTY_USERNAME_NOT_ALLOWED,
+  EMPTY_NAME_NOT_ALLOWED: EMPTY_NAME_NOT_ALLOWED,
   DEFAULT: Object.freeze({
     status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
     code: "SIGNUP_FAILED",
