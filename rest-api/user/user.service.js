@@ -84,13 +84,17 @@ export async function updateUserByUsername(username, updates) {
     `Updating user: ${JSON.stringify(existing)} with updates: ${JSON.stringify(updates)}`,
   );
   try {
-    await users.findOneAndUpdate(
+    const updated = await users.findOneAndUpdate(
       { _id: existing._id },
       { $set: updates },
       { returnDocument: "after" },
     );
-    const { hashedPassword, ...updatesWithoutPassword } = updates;
-    return updatesWithoutPassword;
+    const { hashedPassword, ...updatedWithoutPassword } = updated;
+    console.log(
+      "[DEBUG] Updated user (without password):",
+      updatedWithoutPassword,
+    );
+    return updatedWithoutPassword;
   } catch (err) {
     rethrowDuplicate(err, "USERNAME_TAKEN");
   }

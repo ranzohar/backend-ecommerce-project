@@ -9,6 +9,8 @@ You are never allowed to push code to the remote repository in git.
 
 We are using Windows CMD syntax.
 
+Never ask if you can make changed. I will decide through keep/undo what goes in.
+
 # planning
 
 Create a plan folder with a CONSECUTIVE_NUM-NAME.md (example: plan/001-add-theme-toggle.md) file for each plan. The file should contain the following sections:
