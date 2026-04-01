@@ -116,3 +116,51 @@ describe("Order flow: place orders → list own → admin view all → stats", (
     expect(res.body[MOCK_PRODUCTS[1].title]).toBeUndefined();
   });
 });
+
+describe("stats by product: 'allow others' flag respected at order time", () => {
+  const PUBLIC_USER = { username: "user_public", password: "password123" };
+  const PRIVATE_USER = { username: "user_private", password: "password123" };
+
+  // public user buys 3, private user buys 5 — same product
+  const PUBLIC_ORDER = { products: [{ title: MOCK_PRODUCTS[0].title, quantity: 3 }] };
+  const PRIVATE_ORDER = { products: [{ title: MOCK_PRODUCTS[0].title, quantity: 5 }] };
+
+  let adminAgent;
+  let publicUserAgent;
+  let privateUserAgent;
+
+  beforeAll(async () => {
+    await clearAllCollections();
+    await seedUser({ ...PUBLIC_USER, isAdmin: false, allowOthersToSeeMyOrders: true });
+    await seedUser({ ...PRIVATE_USER, isAdmin: false, allowOthersToSeeMyOrders: false });
+
+    adminAgent = createAgent();
+    await adminAgent.loginAs(ADMIN_USERNAME, ADMIN_PASSWORD);
+
+    publicUserAgent = createAgent();
+    await publicUserAgent.loginAs(PUBLIC_USER.username, PUBLIC_USER.password);
+
+    privateUserAgent = createAgent();
+    await privateUserAgent.loginAs(PRIVATE_USER.username, PRIVATE_USER.password);
+
+    await adminAgent.agent.post("/api/category/").send({ name: MOCK_CATEGORIES[0].name });
+    await adminAgent.agent.post("/api/product/").send(MOCK_PRODUCTS[0]);
+
+    await publicUserAgent.agent.post("/api/order/").send(PUBLIC_ORDER);
+    await privateUserAgent.agent.post("/api/order/").send(PRIVATE_ORDER);
+  });
+
+  it("user sees only quantity from customers with 'allow others' enabled (3)", async () => {
+    const res = await publicUserAgent.agent.get(`/api/order/stats/product/${MOCK_PRODUCTS[0].title}`);
+
+    expect(res.status).toBe(HTTP_STATUS.OK);
+    expect(res.body[MOCK_PRODUCTS[0].title]).toBe(3);
+  });
+
+  it("admin sees total quantity from all non-admin customers (8)", async () => {
+    const res = await adminAgent.agent.get(`/api/order/stats/product/${MOCK_PRODUCTS[0].title}`);
+
+    expect(res.status).toBe(HTTP_STATUS.OK);
+    expect(res.body[MOCK_PRODUCTS[0].title]).toBe(8);
+  });
+});

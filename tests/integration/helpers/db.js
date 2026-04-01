@@ -2,6 +2,7 @@ import {
   getCollection,
   USERS_COLLECTION,
   ORDER_COLLECTION,
+  PUBLIC_ORDERS_COLLECTION,
   CATEGORIES_COLLECTION,
   PRODUCTS_COLLECTION,
 } from "#src/mongodb/mongodb.service.js";
@@ -21,21 +22,23 @@ export async function seedAdminUser() {
 }
 
 export async function clearAllCollections() {
-  const [users, orders, categories, products] = await Promise.all([
+  const [users, orders, publicOrders, categories, products] = await Promise.all([
     getCollection(USERS_COLLECTION),
     getCollection(ORDER_COLLECTION),
+    getCollection(PUBLIC_ORDERS_COLLECTION),
     getCollection(CATEGORIES_COLLECTION),
     getCollection(PRODUCTS_COLLECTION),
   ]);
   await Promise.all([
     users.deleteMany({ username: { $ne: ADMIN_USERNAME } }),
     orders.deleteMany({}),
+    publicOrders.deleteMany({}),
     categories.deleteMany({}),
     products.deleteMany({}),
   ]);
 }
 
-export async function seedUser({ username, password, isAdmin = false }) {
+export async function seedUser({ username, password, isAdmin = false, ...extraFields }) {
   const hashedPassword = await hashPassword(password);
   const collection = await getCollection(USERS_COLLECTION);
   const result = await collection.insertOne({
@@ -44,6 +47,7 @@ export async function seedUser({ username, password, isAdmin = false }) {
     isAdmin,
     fname: "Test",
     lname: "User",
+    ...extraFields,
   });
   return { _id: result.insertedId, username, isAdmin };
 }

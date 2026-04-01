@@ -8,7 +8,11 @@ export const PRODUCT_NOT_FOUND = Object.freeze({
 });
 
 export const ADD_ORDER_ERRORS = Object.freeze({
-  USER_NOT_FOUND: USER_NOT_FOUND,
+  USER_NOT_FOUND: {
+    status: HTTP_STATUS.UNAUTHORIZED,
+    code: "USER_NOT_FOUND",
+    message: "User not found",
+  },
   PRODUCT_NOT_FOUND: PRODUCT_NOT_FOUND,
   DEFAULT: Object.freeze({
     status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
@@ -18,7 +22,11 @@ export const ADD_ORDER_ERRORS = Object.freeze({
 });
 
 export const GET_ORDERS_ERRORS = Object.freeze({
-  USER_NOT_FOUND: USER_NOT_FOUND,
+  USER_NOT_FOUND: {
+    status: HTTP_STATUS.UNAUTHORIZED,
+    code: "USER_NOT_FOUND",
+    message: "User not found",
+  },
   DEFAULT: Object.freeze({
     status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
     code: "GET_ORDERS_FAILED",

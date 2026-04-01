@@ -2,7 +2,6 @@ import { logDebug } from "#src/log.service.js";
 import {
   getCollection,
   USERS_COLLECTION,
-  ORDER_COLLECTION,
 } from "#src/mongodb/mongodb.service.js";
 import {
   toObjectId,
@@ -113,18 +112,8 @@ export async function getUsers() {
       $match: { isAdmin: { $ne: true } },
     },
     {
-      $lookup: {
-        from: ORDER_COLLECTION,
-        localField: "_id",
-        foreignField: "_userId",
-        as: "orders",
-      },
-    },
-    {
       $project: {
         hashedPassword: 0,
-        "orders._id": 0,
-        "orders._userId": 0,
       },
     },
   ];

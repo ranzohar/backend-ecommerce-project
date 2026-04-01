@@ -2,6 +2,7 @@ import { logDebug, logError } from "#src/log.service.js";
 import {
   getCollection,
   ORDER_COLLECTION,
+  PUBLIC_ORDERS_COLLECTION,
   USERS_COLLECTION,
   PRODUCTS_COLLECTION,
 } from "#src/mongodb/mongodb.service.js";
@@ -11,16 +12,22 @@ import { getUserByUsername } from "#src/rest-api/user/user.service.js";
 export async function addOrder(order, username) {
   logDebug(`Adding order: ${JSON.stringify(order)}`);
   requiredArguments([username, "username"]);
-  const { _id } = await getUserByUsername(username);
+  const user = await getUserByUsername(username);
+  if (!user) throw new Error("USER_NOT_FOUND");
+  const { _id, allowOthersToSeeMyOrders } = user;
 
-  const titles = order.products.map((p) => { return p.title; });
+  const titles = order.products.map((p) => {
+    return p.title;
+  });
   const productsCollection = await getCollection(PRODUCTS_COLLECTION);
   const foundProducts = await productsCollection
     .find({ title: { $in: titles } })
     .toArray();
 
   const totalPrice = order.products.reduce((sum, { title, quantity }) => {
-    const product = foundProducts.find((p) => { return p.title === title; });
+    const product = foundProducts.find((p) => {
+      return p.title === title;
+    });
     if (!product) {
       throw new Error("PRODUCT_NOT_FOUND");
     }
@@ -28,7 +35,9 @@ export async function addOrder(order, username) {
   }, 0);
 
   const productsToSave = order.products.map(({ title, quantity }) => {
-    const product = foundProducts.find((p) => { return p.title === title; });
+    const product = foundProducts.find((p) => {
+      return p.title === title;
+    });
     return { _productId: product._id, quantity };
   });
 
@@ -44,13 +53,29 @@ export async function addOrder(order, username) {
     );
     throw new Error("ORDER_CREATION_FAILED");
   }
+  if (allowOthersToSeeMyOrders) {
+    const publicOrdersCollection = await getCollection(
+      PUBLIC_ORDERS_COLLECTION,
+    );
+    for (const { title, quantity } of order.products) {
+      await publicOrdersCollection.updateOne(
+        { title },
+        { $inc: { totalQuantity: quantity } },
+        { upsert: true },
+      );
+    }
+  }
   return { products: order.products, totalPrice };
 }
 
 export async function getOrdersByUser(username) {
   logDebug(`Getting orders for user: ${username}`);
   requiredArguments([username, "username"]);
-  const { _id } = await getUserByUsername(username);
+  const user = await getUserByUsername(username);
+  if (!user) {
+    throw new Error("USER_NOT_FOUND");
+  }
+  const { _id } = user;
   const ordersCollection = await getCollection(ORDER_COLLECTION);
   const pipeline = [
     { $match: { _userId: _id } },
@@ -86,7 +111,7 @@ export async function getOrdersByUser(username) {
     },
     {
       $addFields: {
-        createdAt: { $toDate: "$_id" },
+        date: { $toDate: "$_id" },
         id: { $toString: "$_id" },
       },
     },
@@ -97,6 +122,9 @@ export async function getOrdersByUser(username) {
     },
   ];
   const orders = await ordersCollection.aggregate(pipeline).toArray();
+  console.log(
+    `[DEBUG] Found orders for user ${username}: ${JSON.stringify(orders)}`,
+  );
   return orders;
 }
 
@@ -146,8 +174,9 @@ export async function getOrders(sortBy) {
     { $unwind: "$user" },
     {
       $addFields: {
-        createdAt: { $toDate: "$_id" },
+        date: { $toDate: "$_id" },
         id: { $toString: "$_id" },
+        userId: { $toString: "$_userId" },
       },
     },
     {
@@ -212,7 +241,9 @@ function toStatsObject(results) {
 export async function getStats() {
   logDebug("Getting product stats for all orders");
   const ordersCollection = await getCollection(ORDER_COLLECTION);
-  const results = await ordersCollection.aggregate(buildStatsPipeline()).toArray();
+  const results = await ordersCollection
+    .aggregate(buildStatsPipeline())
+    .toArray();
   return toStatsObject(results);
 }
 
@@ -226,14 +257,18 @@ export async function getStatsByUser(username) {
   return toStatsObject(results);
 }
 
-export async function getStatsByProduct(title) {
-  logDebug(`Getting stats for product: ${title}`);
+export async function getStatsByProduct(title, isAdmin) {
+  logDebug(`Getting stats for product: ${title}, isAdmin: ${isAdmin}`);
   requiredArguments([title, "title"]);
+  if (!isAdmin) {
+    const publicOrdersCollection = await getCollection(
+      PUBLIC_ORDERS_COLLECTION,
+    );
+    const entry = await publicOrdersCollection.findOne({ title });
+    return { [title]: entry?.totalQuantity ?? 0 };
+  }
   const ordersCollection = await getCollection(ORDER_COLLECTION);
-  const pipeline = [
-    ...buildStatsPipeline(),
-    { $match: { title } },
-  ];
+  const pipeline = [...buildStatsPipeline(), { $match: { title } }];
   const results = await ordersCollection.aggregate(pipeline).toArray();
   return toStatsObject(results);
 }

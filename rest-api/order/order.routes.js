@@ -8,6 +8,6 @@ router.get("/", requireLogin, requireNonAdmin, get);
 router.get("/all", requireAdmin, getAll);
 router.get("/stats", requireAdmin, stats);
 router.get("/stats/user/:username", requireAdmin, statsByUser);
-router.get("/stats/product/:title", requireAdmin, statsByProduct);
+router.get("/stats/product/:title", requireLogin, statsByProduct);
 
 export const orderRoutes = router;

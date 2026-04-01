@@ -50,6 +50,6 @@ export async function statsByUser(req, res) {
 
 export async function statsByProduct(req, res) {
   crudlSafe(res, GET_STATS_ERRORS, async () => {
-    return res.json(await getStatsByProduct(req.params.title));
+    return res.json(await getStatsByProduct(req.params.title, req.user.isAdmin));
   });
 }

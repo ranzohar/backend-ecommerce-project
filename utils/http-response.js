@@ -15,8 +15,18 @@ export function warnAndRespond(res, { status, message, code }, err) {
   requiredArguments([status, "status"], [message, "message"], [code, "code"]);
   const logArgs = [`${message}${err?.message ? `: ${err?.message}` : ""}`];
   if (err?.stack) {
-    // logError(`${message}: ${err.message}\nStack: ${err.stack}`);
     logArgs.push("\nStack:", err.stack);
+  }
+  // Clear loginToken cookie for user-not-found or invalid-user errors
+  const shouldLogout =
+    [
+      "USER_NOT_FOUND",
+      "INVALID_USERNAME_OR_PASSWORD",
+      "LOGIN_REQUIRED",
+      "INVALID_TOKEN",
+    ].includes(code) || /user.*not.*found/i.test(message);
+  if (shouldLogout && res.clearCookie) {
+    res.clearCookie("loginToken");
   }
   logWarn(...logArgs, { stackOffset: 2 });
   return res.status(status).json({
