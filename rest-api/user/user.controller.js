@@ -32,6 +32,7 @@ export async function signup(req, res) {
   crudlSafe(res, SIGNUP_ERRORS, async () => {
     const userInput = await pickFieldsWithPassword(req.body, USER_FIELDS);
     userInput._id = getNewId();
+    userInput.createDate = new Date();
 
     // Validate username is not empty
     if (!userInput.username || userInput.username.trim() === "") {
