@@ -47,10 +47,12 @@ export async function clearE2EDatabase() {
     CATEGORIES_COLLECTION,
     PRODUCTS_COLLECTION,
   ];
-  for (const name of collections) {
-    const col = await getCollection(name);
-    await col.deleteMany({});
-  }
+  await Promise.all(
+    collections.map(async (name) => {
+      const col = await getCollection(name);
+      await col.deleteMany({});
+    }),
+  );
   return { cleared: true };
 }
 
