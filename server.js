@@ -13,6 +13,7 @@ import { userRoutes } from "./rest-api/user/user.routes.js";
 import { orderRoutes } from "./rest-api/order/order.routes.js";
 import { categoryRoutes } from "./rest-api/category/category.routes.js";
 import { setAls } from "./rest-api/middleware/set-als.js";
+import { clearE2EDatabase, ensureAdminTestUser } from "./tests/e2e/scripts/e2e-db-setup.js";
 
 // Ensure old run.log is deleted before logging
 await initPromise;
@@ -39,6 +40,18 @@ app.use("/api/product", productRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/order", orderRoutes);
 app.use("/api/category", categoryRoutes);
+if (process.env.NODE_ENV === "test") {
+  app.post("/api/test/reset", async (req, res) => {
+    try {
+      await clearE2EDatabase();
+      await ensureAdminTestUser();
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+}
+
 app.get(/.*/, (req, res) => {
   res.sendFile(path.resolve("public/index.html"));
 });

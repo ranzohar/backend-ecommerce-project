@@ -257,6 +257,39 @@ export async function getStatsByUser(username) {
   return toStatsObject(results);
 }
 
+export async function getProductStats() {
+  logDebug("Getting product stats with colors");
+  const ordersCollection = await getCollection(ORDER_COLLECTION);
+  const pipeline = [
+    { $unwind: "$products" },
+    {
+      $lookup: {
+        from: PRODUCTS_COLLECTION,
+        localField: "products._productId",
+        foreignField: "_id",
+        as: "productDetails",
+      },
+    },
+    { $unwind: "$productDetails" },
+    {
+      $group: {
+        _id: "$productDetails.title",
+        value: { $sum: "$products.quantity" },
+        color: { $first: "$productDetails.color" },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        name: "$_id",
+        value: 1,
+        color: 1,
+      },
+    },
+  ];
+  return ordersCollection.aggregate(pipeline).toArray();
+}
+
 export async function getStatsByProduct(title, isAdmin) {
   logDebug(`Getting stats for product: ${title}, isAdmin: ${isAdmin}`);
   requiredArguments([title, "title"]);

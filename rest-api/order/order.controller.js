@@ -1,7 +1,7 @@
 import { crudlSafe, pickFields, requiredArguments } from "#src/utils/index.js";
 import { logDebug, logInfo } from "#src/log.service.js";
 import { ADD_ORDER_ERRORS, GET_ORDERS_ERRORS, GET_STATS_ERRORS } from "./order.error.js";
-import { addOrder, getOrders, getOrdersByUser, getStats, getStatsByUser, getStatsByProduct } from "./order.service.js";
+import { addOrder, getOrders, getOrdersByUser, getStats, getStatsByUser, getStatsByProduct, getProductStats } from "./order.service.js";
 
 const ORDER_FIELDS = ["products"];
 
@@ -51,5 +51,11 @@ export async function statsByUser(req, res) {
 export async function statsByProduct(req, res) {
   crudlSafe(res, GET_STATS_ERRORS, async () => {
     return res.json(await getStatsByProduct(req.params.title, req.user.isAdmin));
+  });
+}
+
+export async function productStats(req, res) {
+  crudlSafe(res, GET_STATS_ERRORS, async () => {
+    return res.json(await getProductStats());
   });
 }
