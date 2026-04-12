@@ -46,6 +46,7 @@ export async function addOrder(order, username) {
   const result = await ordersCollection.insertOne({
     ...orderToSave,
     _userId: _id,
+    public: allowOthersToSeeMyOrders,
   });
   if (!result.acknowledged) {
     logError(
@@ -290,18 +291,44 @@ export async function getProductStats() {
   return ordersCollection.aggregate(pipeline).toArray();
 }
 
-export async function getStatsByProduct(title, isAdmin) {
-  logDebug(`Getting stats for product: ${title}, isAdmin: ${isAdmin}`);
-  requiredArguments([title, "title"]);
-  if (!isAdmin) {
-    const publicOrdersCollection = await getCollection(
-      PUBLIC_ORDERS_COLLECTION,
-    );
-    const entry = await publicOrdersCollection.findOne({ title });
-    return { [title]: entry?.totalQuantity ?? 0 };
-  }
+export async function getPublicOrders() {
+  const publicOrdersCollection = await getCollection(PUBLIC_ORDERS_COLLECTION);
+  const entries = await publicOrdersCollection.find({}).toArray();
+  return entries.reduce((acc, { title, totalQuantity }) => {
+    acc[title] = totalQuantity;
+    return acc;
+  }, {});
+}
+
+export async function revokePublicOrders(username) {
+  const user = await getUserByUsername(username);
+  if (!user) throw new Error("USER_NOT_FOUND");
+
   const ordersCollection = await getCollection(ORDER_COLLECTION);
-  const pipeline = [...buildStatsPipeline(), { $match: { title } }];
-  const results = await ordersCollection.aggregate(pipeline).toArray();
-  return toStatsObject(results);
+  const publicUserOrders = await ordersCollection
+    .find({ _userId: user._id, public: true })
+    .toArray();
+
+  if (publicUserOrders.length === 0) return;
+
+  const productsCollection = await getCollection(PRODUCTS_COLLECTION);
+  const publicOrdersCollection = await getCollection(PUBLIC_ORDERS_COLLECTION);
+
+  for (const order of publicUserOrders) {
+    for (const { _productId, quantity } of order.products) {
+      const product = await productsCollection.findOne({ _id: _productId });
+      if (product) {
+        await publicOrdersCollection.updateOne(
+          { title: product.title },
+          { $inc: { totalQuantity: -quantity } },
+        );
+      }
+    }
+  }
+
+  const orderIds = publicUserOrders.map((o) => o._id);
+  await ordersCollection.updateMany(
+    { _id: { $in: orderIds } },
+    { $set: { public: false } },
+  );
 }

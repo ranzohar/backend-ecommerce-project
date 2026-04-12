@@ -16,6 +16,7 @@ import {
   getUsers,
   removeUser,
 } from "./user.service.js";
+import { revokePublicOrders } from "#src/rest-api/order/order.service.js";
 import { logDebug, logInfo } from "#src/log.service.js";
 import {
   UPDATE_ERRORS,
@@ -24,8 +25,8 @@ import {
   LIST_ERRORS,
 } from "./user.error.js";
 
-const USER_FIELDS = ["username", "password", "fname", "lname", "allowOthers"];
-const ME_RESPONSE_FIELDS = ["username", "isAdmin", "uid", "fname", "lname", "allowOthers"];
+const USER_FIELDS = ["username", "password", "fname", "lname", "allowOthersToSeeMyOrders"];
+const ME_RESPONSE_FIELDS = ["username", "isAdmin", "uid", "fname", "lname", "allowOthersToSeeMyOrders"];
 const LOGIN_COOKIE_OPTIONS = { httpOnly: true, sameSite: "lax" };
 
 export async function signup(req, res) {
@@ -121,6 +122,10 @@ export async function update(req, res) {
       req.user?.username,
       userInput,
     );
+
+    if (userInput.allowOthersToSeeMyOrders === false) {
+      await revokePublicOrders(req.user.username);
+    }
 
     loginAndRepond(
       res,
