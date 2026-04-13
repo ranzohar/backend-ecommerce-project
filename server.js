@@ -20,7 +20,7 @@ await initPromise;
 logInfo("Starting server...");
 
 const app = express();
-const allowedOrigin = "http://localhost:5173";
+const allowedOrigin = process.env.ALLOWED_ORIGIN || "http://localhost:5173";
 app.use(
   cors({
     origin: allowedOrigin,

@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "build": "cd ../react55-final-project && npm install && npm run build && cp -r dist/* ../project-backend/public/",
     "dev": "nodemon server.js",
     "test": "vitest run",
     "test:watch": "vitest",
