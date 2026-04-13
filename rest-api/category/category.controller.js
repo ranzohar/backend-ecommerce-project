@@ -24,9 +24,9 @@ export async function addCategoryHandler(req, res) {
 
 export async function updateCategoryHandler(req, res) {
   crudlSafe(res, UPDATE_ERRORS, async () => {
-    const { name } = req.params;
+    const { id } = req.params;
     const { name: newName } = req.body;
-    const category = await updateCategory(name, newName);
+    const category = await updateCategory(id, newName);
     res.json({ category });
     logInfo(`Response update category sent with status ${res.statusCode}`);
   });
@@ -34,9 +34,9 @@ export async function updateCategoryHandler(req, res) {
 
 export async function deleteCategoryHandler(req, res) {
   crudlSafe(res, DELETE_ERRORS, async () => {
-    const { name } = req.params;
-    await deleteCategory(name);
-    res.json({ message: "Deleted category", name });
+    const { id } = req.params;
+    await deleteCategory(id);
+    res.json({ message: "Deleted category", categoryId: id });
     logInfo(`Response delete category sent with status ${res.statusCode}`);
   });
 }

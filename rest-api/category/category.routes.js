@@ -11,7 +11,7 @@ const router = Router();
 
 router.get("/", requireLogin, listCategoriesHandler);
 router.post("/", requireAdmin, addCategoryHandler);
-router.patch("/:name", requireAdmin, updateCategoryHandler);
-router.delete("/:name", requireAdmin, deleteCategoryHandler);
+router.patch("/:id", requireAdmin, updateCategoryHandler);
+router.delete("/:id", requireAdmin, deleteCategoryHandler);
 
 export const categoryRoutes = router;

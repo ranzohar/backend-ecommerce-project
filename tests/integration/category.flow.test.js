@@ -67,13 +67,13 @@ describe("Category flow: add → list → update → delete + product category v
     createdCategoryId = res.body.category.id;
   });
 
-  it("trying to add a product with a non-existing category fails", async () => {
+  it("trying to add a product with a non-existing category ID fails", async () => {
     const res = await adminAgent.agent
       .post("/api/product/")
       .send({
         title: PRODUCT_TITLE,
         price: 999,
-        category: "NonExistentCategory",
+        categoryId: "000000000000000000000000",
         description: "A laptop",
       });
 
@@ -102,13 +102,13 @@ describe("Category flow: add → list → update → delete + product category v
     expect(res.body.category.id).toBe(createdCategoryId);
   });
 
-  it("adding a product with the updated category name succeeds", async () => {
+  it("adding a product with the category ID succeeds", async () => {
     const res = await adminAgent.agent
       .post("/api/product/")
       .send({
         title: PRODUCT_TITLE,
         price: 999,
-        category: UPDATED_CATEGORY_NAME,
+        categoryId: createdCategoryId,
         description: "A laptop",
       });
 

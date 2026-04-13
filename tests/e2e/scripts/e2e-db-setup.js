@@ -1,9 +1,9 @@
 import "#src/load-env.js";
-console.log("[DEBUG] Script loaded: e2e-db-setup.js");
 import {
   getCollection,
   USERS_COLLECTION,
   ORDER_COLLECTION,
+  PUBLIC_ORDERS_COLLECTION,
   CATEGORIES_COLLECTION,
   PRODUCTS_COLLECTION,
 } from "#src/mongodb/mongodb.service.js";
@@ -44,6 +44,7 @@ export async function clearE2EDatabase() {
   const collections = [
     USERS_COLLECTION,
     ORDER_COLLECTION,
+    PUBLIC_ORDERS_COLLECTION,
     CATEGORIES_COLLECTION,
     PRODUCTS_COLLECTION,
   ];

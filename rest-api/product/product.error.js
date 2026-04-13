@@ -1,5 +1,11 @@
 import { HTTP_STATUS } from "#src/utils/index.js";
 
+export const INVALID_PRICE = Object.freeze({
+  status: HTTP_STATUS.BAD_REQUEST,
+  code: "INVALID_PRICE",
+  message: "Product price must be greater than 0",
+});
+
 export const PRODUCT_NOT_FOUND = Object.freeze({
   status: HTTP_STATUS.NOT_FOUND,
   code: "PRODUCT_NOT_FOUND",
@@ -28,6 +34,7 @@ export const GET_PRODUCT_ERRORS = Object.freeze({
 });
 
 export const ADD_PRODUCT_ERRORS = Object.freeze({
+  INVALID_PRICE: INVALID_PRICE,
   CATEGORY_NOT_FOUND: CATEGORY_NOT_FOUND,
   PRODUCT_TITLE_TAKEN: PRODUCT_TITLE_TAKEN,
   DEFAULT: Object.freeze({
@@ -43,5 +50,26 @@ export const LIST_PRODUCTS_ERRORS = Object.freeze({
     status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
     code: "LIST_PRODUCTS_FAILED",
     message: "Failed to read products data",
+  }),
+});
+
+export const UPDATE_PRODUCT_ERRORS = Object.freeze({
+  INVALID_PRICE: INVALID_PRICE,
+  PRODUCT_NOT_FOUND: PRODUCT_NOT_FOUND,
+  CATEGORY_NOT_FOUND: CATEGORY_NOT_FOUND,
+  PRODUCT_TITLE_TAKEN: PRODUCT_TITLE_TAKEN,
+  DEFAULT: Object.freeze({
+    status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+    code: "UPDATE_PRODUCT_FAILED",
+    message: "Failed to update product",
+  }),
+});
+
+export const DELETE_PRODUCT_ERRORS = Object.freeze({
+  PRODUCT_NOT_FOUND: PRODUCT_NOT_FOUND,
+  DEFAULT: Object.freeze({
+    status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+    code: "DELETE_PRODUCT_FAILED",
+    message: "Failed to delete product",
   }),
 });

@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 import {
   getCollection,
   CATEGORIES_COLLECTION,
@@ -7,29 +8,33 @@ import { rethrowDuplicate } from "#src/utils/index.js";
 export async function addCategory(name) {
   const collection = await getCollection(CATEGORIES_COLLECTION);
   try {
-    await collection.insertOne({ name });
-    return { name };
+    const result = await collection.insertOne({ name });
+    return { id: result.insertedId.toString(), name };
   } catch (err) {
     rethrowDuplicate(err, "CATEGORY_NAME_TAKEN");
   }
 }
 
-export async function updateCategory(name, newName) {
+export async function updateCategory(id, newName) {
   const collection = await getCollection(CATEGORIES_COLLECTION);
+  console.log("Updating category", id, newName);
   try {
-    const result = await collection.updateOne({ name }, { $set: { name: newName } });
+    const result = await collection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { name: newName } },
+    );
     if (result.matchedCount === 0) {
       throw new Error("CATEGORY_NOT_FOUND");
     }
   } catch (err) {
     rethrowDuplicate(err, "CATEGORY_NAME_TAKEN");
   }
-  return { name: newName };
+  return { id, name: newName };
 }
 
-export async function deleteCategory(name) {
+export async function deleteCategory(id) {
   const collection = await getCollection(CATEGORIES_COLLECTION);
-  const result = await collection.deleteOne({ name });
+  const result = await collection.deleteOne({ _id: new ObjectId(id) });
   if (result.deletedCount === 0) {
     throw new Error("CATEGORY_NOT_FOUND");
   }
@@ -38,5 +43,5 @@ export async function deleteCategory(name) {
 export async function listCategories() {
   const collection = await getCollection(CATEGORIES_COLLECTION);
   const categories = await collection.find({}).toArray();
-  return categories.map(({ name }) => ({ name }));
+  return categories.map(({ _id, name }) => ({ id: _id.toString(), name }));
 }

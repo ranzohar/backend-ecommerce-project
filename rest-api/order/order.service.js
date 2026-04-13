@@ -291,6 +291,47 @@ export async function getProductStats() {
   return ordersCollection.aggregate(pipeline).toArray();
 }
 
+export async function getOrdersByProduct(title) {
+  logDebug(`Getting orders for product: ${title}`);
+  const ordersCollection = await getCollection(ORDER_COLLECTION);
+  const pipeline = [
+    { $unwind: "$products" },
+    {
+      $lookup: {
+        from: PRODUCTS_COLLECTION,
+        localField: "products._productId",
+        foreignField: "_id",
+        as: "productDetails",
+      },
+    },
+    { $unwind: "$productDetails" },
+    { $match: { "productDetails.title": title } },
+    {
+      $lookup: {
+        from: USERS_COLLECTION,
+        localField: "_userId",
+        foreignField: "_id",
+        as: "user",
+      },
+    },
+    { $unwind: "$user" },
+    {
+      $project: {
+        _id: 1,
+        fname: "$user.fname",
+        quantity: "$products.quantity",
+      },
+    },
+    { $sort: { _id: 1 } },
+  ];
+  const results = await ordersCollection.aggregate(pipeline).toArray();
+  return results.map(({ _id, fname, quantity }) => {
+    const date = _id.getTimestamp();
+    const timestamp = date.getTime();
+    return [fname ?? "Unknown", quantity, date, timestamp];
+  });
+}
+
 export async function getPublicOrders() {
   const publicOrdersCollection = await getCollection(PUBLIC_ORDERS_COLLECTION);
   const entries = await publicOrdersCollection.find({}).toArray();

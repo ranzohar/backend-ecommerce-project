@@ -1,42 +1,78 @@
+import { ObjectId } from "mongodb";
 import {
   getCollection,
   PRODUCTS_COLLECTION,
   CATEGORIES_COLLECTION,
 } from "#src/mongodb/mongodb.service.js";
+import { rethrowDuplicate } from "#src/utils/index.js";
 
-export async function upsertProduct(product) {
-  let categoryId;
-  if (product.category) {
-    const categoriesCollection = await getCollection(CATEGORIES_COLLECTION);
-    const existingCategory = await categoriesCollection.findOne({
-      name: product.category,
-    });
-    if (!existingCategory) {
-      throw new Error("CATEGORY_NOT_FOUND");
+async function resolveCategoryId(categoryId) {
+  if (!categoryId) return undefined;
+  const categoriesCollection = await getCollection(CATEGORIES_COLLECTION);
+  let objectId;
+  try {
+    objectId = new ObjectId(categoryId);
+  } catch {
+    throw new Error("CATEGORY_NOT_FOUND");
+  }
+  const existing = await categoriesCollection.findOne({ _id: objectId });
+  if (!existing) throw new Error("CATEGORY_NOT_FOUND");
+  return existing._id;
+}
+
+
+export async function createProduct(product) {
+  if (!product.price || Number(product.price) <= 0) throw new Error("INVALID_PRICE");
+  let categoryId = product.categoryId;
+  let doc;
+  if (categoryId) {
+    const resolvedId = await resolveCategoryId(categoryId);
+    doc = { ...product, categoryId: resolvedId };
+    categoryId = resolvedId;
+  } else {
+    doc = { ...product };
+    delete doc.categoryId;
+  }
+  const collection = await getCollection(PRODUCTS_COLLECTION);
+  try {
+    const result = await collection.insertOne(doc);
+    let response = { id: result.insertedId.toString(), ...doc };
+    if (response.categoryId && typeof response.categoryId === "object" && response.categoryId.toString) {
+      response.categoryId = response.categoryId.toString();
     }
-    categoryId = existingCategory._id;
+    return response;
+  } catch (err) {
+    rethrowDuplicate(err, "PRODUCT_TITLE_TAKEN");
   }
-  const collection = await getCollection(PRODUCTS_COLLECTION);
-  const doc = { ...product };
-  if (categoryId) doc.categoryId = categoryId;
-  await collection.replaceOne({ title: product.title }, doc, { upsert: true });
-  return product;
 }
 
-export async function deleteProduct(productId) {
+
+export async function updateProduct(id, product) {
+  if (!product.price || Number(product.price) <= 0) throw new Error("INVALID_PRICE");
+  let categoryId = product.categoryId;
+  let doc;
+  if (categoryId) {
+    const resolvedId = await resolveCategoryId(categoryId);
+    doc = { ...product, categoryId: resolvedId };
+    categoryId = resolvedId;
+  } else {
+    doc = { ...product };
+    delete doc.categoryId;
+  }
   const collection = await getCollection(PRODUCTS_COLLECTION);
-  const result = await collection.deleteOne({ _id: productId });
+  const result = await collection.replaceOne({ _id: new ObjectId(id) }, doc);
+  if (result.matchedCount === 0) throw new Error("PRODUCT_NOT_FOUND");
+  let response = { id, ...doc };
+  if (response.categoryId && typeof response.categoryId === "object" && response.categoryId.toString) {
+    response.categoryId = response.categoryId.toString();
+  }
+  return response;
+}
+
+export async function deleteProduct(id) {
+  const collection = await getCollection(PRODUCTS_COLLECTION);
+  const result = await collection.deleteOne({ _id: new ObjectId(id) });
   return result.deletedCount > 0;
-}
-
-export async function getProduct(productId) {
-  const collection = await getCollection(PRODUCTS_COLLECTION);
-  const product = await collection.findOne({ _id: productId });
-  if (!product) {
-    return null;
-  }
-  const { _id, ...rest } = product;
-  return { id: _id, ...rest };
 }
 
 export async function listProducts({ filterBy }) {
@@ -51,19 +87,10 @@ export async function listProducts({ filterBy }) {
     query.price = { $lte: Number(filterBy.price) };
   }
 
-  if (filterBy?.category) {
-    const categoriesCollection = await getCollection(CATEGORIES_COLLECTION);
-    const existingCategory = await categoriesCollection.findOne({
-      name: filterBy.category,
-    });
-    if (!existingCategory) {
-      throw new Error("CATEGORY_NOT_FOUND");
-    }
-    query.categoryId = existingCategory._id;
+  if (filterBy?.categoryId) {
+    query.categoryId = new ObjectId(filterBy.categoryId);
   }
 
   const products = await collection.find(query).toArray();
-  return products.map(({ _id, ...rest }) => {
-    return { id: _id, ...rest };
-  });
+  return products.map(({ _id, ...rest }) => ({ id: _id.toString(), ...rest }));
 }

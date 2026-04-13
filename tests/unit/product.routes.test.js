@@ -74,7 +74,7 @@ describe("GET / route", () => {
 const NEW_PRODUCT = {
   title: "New Product",
   price: 15,
-  category: MOCK_CATEGORIES[0].name,
+  categoryId: MOCK_CATEGORIES[0].id,
   description: "A new product",
 };
 
